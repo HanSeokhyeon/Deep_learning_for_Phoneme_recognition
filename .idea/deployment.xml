@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="han@223.194.33.84:22">
+    <serverData>
+      <paths name="han@223.194.33.84:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/han/phoneme_recognition" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="han@223.194.33.91:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/han/phoneme_recognition" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>
