@@ -15,6 +15,74 @@ feature_frame = 400
 the_hop_length = 160
 
 
+def make_feature_csv():
+
+    start = time.time()
+
+    file_type = ['TRAIN', 'TEST_developmentset', 'TEST_coreset']
+
+    data_mean = np.zeros(n_feature)
+    data_std = np.zeros(n_feature)
+
+    for i in range(3):
+        input_filename = []
+
+        dirname = "dataset/spikegram/%s/" % file_type[i]
+        search(dirname, input_filename)
+
+        print("Filename scan complete")
+
+        with Manager() as manager:
+            shared_data = manager.list()
+            processes = []
+
+            for j, filename in enumerate(input_filename[:]):
+                p = Process(target=concatenate_feature, args=(shared_data, filename,))
+                processes.append(p)
+                p.start()
+                print(str(j) + " " + input_filename[j] + "\t-> feature")
+
+            for j, p in enumerate(processes):
+                p.join()
+                print(str(j) + " feature -> list")
+
+            shared_data = list(shared_data)
+
+            end = time.time() - start
+
+            print("time = %.2f" % end)
+
+            data = np.concatenate(shared_data, axis=1)
+
+        if i == 0:
+            data_mean += np.mean(data, axis=1)
+            data_std += np.std(data, axis=1)
+
+            output_mstd = "feature/126_spike_deltadelta_mstd.csv"
+            fo2 = open(output_mstd, 'w', encoding='utf-8', newline='')
+            writer2 = csv.writer(fo2)
+            writer2.writerow(list(data_mean))
+            writer2.writerow(list(data_std))
+
+            fo2.close()
+
+        data_norm = np.transpose(normalize_data(x=data, data_mean=data_mean, data_std=data_std))
+
+        output_filename = "feature/126_PSNR50_%s.csv" \
+                          % file_type[i]
+        fo1 = open(output_filename, 'w', encoding='utf-8', newline='')
+        writer1 = csv.writer(fo1)
+        writer1.writerows(list(data_norm))
+
+        fo1.close()
+
+        print("%s complete" % (file_type[i]))
+
+    end = time.time() - start
+
+    print("time = %.2f" % end)
+
+
 def search(dirname, input_filename):
     try:
         filenames = os.listdir(dirname)
@@ -98,21 +166,21 @@ def get_delay():
     return max_point
 
 
+# max_point = get_delay()
+
+
 def get_spikegram(x, num, acc_num, n_data):
     # get spikegram by SNR
     spikegram = np.zeros((n_band, spike_frame * n_data))
-    spikegram_shift = np.zeros((n_band, spike_frame * n_data))
     for k in range(n_data):
         for n in range(num[k]):
             spikegram[int(x[acc_num[k] + n, 0])][int(x[acc_num[k] + n, 2])] \
                 += np.abs(x[acc_num[k] + n, 1])
 
-    max_point = get_delay()
+    # for idx, point in enumerate(max_point):
+    #     spikegram[idx, point:] = spikegram[idx, :-point]
 
-    for idx, point in enumerate(max_point):
-        spikegram_shift[idx, point:] = spikegram[idx, :-point]
-
-    return spikegram_shift
+    return spikegram
 
 
 def make_feature(y, frame, hop_length, num_of_frame):
@@ -188,68 +256,4 @@ def set_label_number(label):
 
 
 if __name__ == '__main__':
-    start = time.time()
-
-    file_type = ['TRAIN', 'TEST_developmentset', 'TEST_coreset']
-
-    data_mean = np.zeros(n_feature)
-    data_std = np.zeros(n_feature)
-
-    for i in range(3):
-        input_filename = []
-
-        dirname = "dataset/spikegram/%s/" % file_type[i]
-        search(dirname, input_filename)
-
-        print("Filename scan complete")
-
-        with Manager() as manager:
-            shared_data = manager.list()
-            processes = []
-
-            for j, filename in enumerate(input_filename[:]):
-                p = Process(target=concatenate_feature, args=(shared_data, filename,))
-                processes.append(p)
-                p.start()
-                print(str(j) + " " + input_filename[j] + "\t-> feature")
-
-            for j, p in enumerate(processes):
-                p.join()
-                print(str(j) + " feature -> list")
-
-            shared_data = list(shared_data)
-
-            end = time.time() - start
-
-            print("time = %.2f" % end)
-
-            data = np.concatenate(shared_data, axis=1)
-
-        if i == 0:
-            data_mean += np.mean(data, axis=1)
-            data_std += np.std(data, axis=1)
-
-            output_mstd = "feature/126_spike_deltadelta_mstd.csv"
-            fo2 = open(output_mstd, 'w', encoding='utf-8', newline='')
-            writer2 = csv.writer(fo2)
-            writer2.writerow(list(data_mean))
-            writer2.writerow(list(data_std))
-
-            fo2.close()
-
-        data_norm = np.transpose(normalize_data(x=data, data_mean=data_mean, data_std=data_std))
-
-        output_filename = "feature/126_PSNR50_%s.csv" \
-                          % file_type[i]
-        fo1 = open(output_filename, 'w', encoding='utf-8', newline='')
-        writer1 = csv.writer(fo1)
-        writer1.writerows(list(data_norm))
-
-        fo1.close()
-
-        print("%s complete" % (file_type[i]))
-
-    end = time.time() - start
-
-    print("time = %.2f" % end)
-
+    make_feature_csv()
