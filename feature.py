@@ -1,4 +1,3 @@
-import csv
 import os
 import numpy as np
 import librosa
@@ -82,13 +81,11 @@ def concatenate_feature(filename):
 
     feature = make_feature(y=spikegram_cut,
                            frame=feature_frame,
-                           hop_length=the_hop_length,
-                           )
+                           hop_length=the_hop_length)
     feature_delta = get_delta(feature, 2)
     feature_deltadelta = get_delta(feature_delta, 2)
 
     label = phn_label(phn=phn, frame=feature_frame, hop_length=the_hop_length, num_of_frame=feature.shape[1])
-
     label_idx = set_label_number(label)
 
     feature = np.concatenate((feature, feature_delta, feature_deltadelta, label_idx.reshape(1, -1)), axis=0)
@@ -119,7 +116,6 @@ def get_data(filename):
 
 def get_delay():
     gammatone_filter = np.fromfile("dataset/Gammatone_Filter_Order4.raw", dtype=np.float64)
-
     gammatone_filter = np.reshape(gammatone_filter, (n_band, -1))
     gammatone_filter = gammatone_filter[:, 1:-1]
 
@@ -150,6 +146,7 @@ def make_feature(y, frame, hop_length):
     feature_tmp = np.zeros(n_band+n_time)
     num_of_frame = int((y.shape[1] - frame) / hop_length + 1)
     start, end = 0, frame
+
     if y.shape[1] % frame != 0:
         y = np.pad(y, ((0, 0), (0, frame - y.shape[1] % frame)), 'constant', constant_values=0)
 
@@ -160,6 +157,7 @@ def make_feature(y, frame, hop_length):
         start += hop_length
         end += hop_length
         feature.append(feature_tmp.reshape(1, -1))
+
     feature = np.concatenate(feature, axis=0).transpose()
     return feature
 

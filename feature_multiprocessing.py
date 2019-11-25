@@ -1,4 +1,3 @@
-import csv
 import os
 import numpy as np
 import librosa
@@ -16,17 +15,12 @@ the_hop_length = 160
 
 
 def make_feature_csv():
-
     start = time.time()
 
     file_type = ['TRAIN', 'TEST_developmentset', 'TEST_coreset']
 
-    data_mean = np.zeros(n_feature)
-    data_std = np.zeros(n_feature)
-
     for i in range(3):
         input_filename = []
-
         dirname = "dataset/spikegram/%s/" % file_type[i]
         search(dirname, input_filename)
 
@@ -36,11 +30,11 @@ def make_feature_csv():
             shared_data = manager.list()
             processes = []
 
-            for j, filename in enumerate(input_filename[:]):
+            for j, filename in enumerate(input_filename[:10]):
                 p = Process(target=concatenate_feature, args=(shared_data, filename,))
                 processes.append(p)
                 p.start()
-                print(str(j) + " " + input_filename[j] + "\t-> feature")
+                print("{} {}\t-> feature".format(j, filename))
 
             for j, p in enumerate(processes):
                 p.join()
@@ -49,37 +43,26 @@ def make_feature_csv():
             shared_data = list(shared_data)
 
             end = time.time() - start
-
             print("time = %.2f" % end)
 
             data = np.concatenate(shared_data, axis=1)
 
         if i == 0:
-            data_mean += np.mean(data, axis=1)
-            data_std += np.std(data, axis=1)
+            data_mean = np.mean(data, axis=1)
+            data_std = np.std(data, axis=1)
 
-            output_mstd = "feature/126_spike_deltadelta_mstd.csv"
-            fo2 = open(output_mstd, 'w', encoding='utf-8', newline='')
-            writer2 = csv.writer(fo2)
-            writer2.writerow(list(data_mean))
-            writer2.writerow(list(data_std))
-
-            fo2.close()
+            np.savetxt(fname="feature/126_spike_deltadelta_mstd.csv",
+                       X=np.concatenate((data_mean.reshape(1, -1), data_std.reshape(1, -1)), axis=0),
+                       delimiter=',')
 
         data_norm = np.transpose(normalize_data(x=data, data_mean=data_mean, data_std=data_std))
 
-        output_filename = "feature/126_PSNR50_%s.csv" \
-                          % file_type[i]
-        fo1 = open(output_filename, 'w', encoding='utf-8', newline='')
-        writer1 = csv.writer(fo1)
-        writer1.writerows(list(data_norm))
-
-        fo1.close()
-
+        np.savetxt(fname="feature/126_PSNR50_%s_.csv" % file_type[i],
+                   X=data_norm,
+                   delimiter=',')
         print("%s complete" % (file_type[i]))
 
     end = time.time() - start
-
     print("time = %.2f" % end)
 
 
@@ -110,26 +93,18 @@ def concatenate_feature(shared_data, filename):
 
     spikegram_cut = spikegram[:, int(phn[0][0]):end_file]
 
-    num_of_frame = int((end_file - int(phn[0][0])) / the_hop_length + 1)
-
     feature = make_feature(y=spikegram_cut,
                            frame=feature_frame,
-                           hop_length=the_hop_length,
-                           num_of_frame=num_of_frame)
+                           hop_length=the_hop_length)
     feature_delta = get_delta(feature, 2)
     feature_deltadelta = get_delta(feature_delta, 2)
 
-    label = phn_label(phn=phn, frame=feature_frame, hop_length=the_hop_length, num_of_frame=num_of_frame)
-
+    label = phn_label(phn=phn, frame=feature_frame, hop_length=the_hop_length, num_of_frame=feature.shape[1])
     label_idx = set_label_number(label)
 
-    tmp_data = np.zeros((n_feature, num_of_frame))
-    tmp_data[:n_band+n_time] = feature
-    tmp_data[n_band+n_time:2*(n_band+n_time)] = feature_delta
-    tmp_data[2*(n_band+n_time):-1] = feature_deltadelta
-    tmp_data[-1] = label_idx
+    feature = np.concatenate((feature, feature_delta, feature_deltadelta, label_idx.reshape(1, -1)), axis=0)
 
-    shared_data.append(tmp_data)
+    shared_data.append(feature)
 
     return
 
@@ -183,19 +158,24 @@ def get_spikegram(x, num, acc_num, n_data):
     return spikegram
 
 
-def make_feature(y, frame, hop_length, num_of_frame):
-    feature = np.zeros((n_band+n_time, num_of_frame))
+def make_feature(y, frame, hop_length):
+    feature = []
+    feature_tmp = np.zeros(n_band + n_time)
+    num_of_frame = int((y.shape[1] - frame) / hop_length + 1)
     start, end = 0, frame
+
     if y.shape[1] % frame != 0:
         y = np.pad(y, ((0, 0), (0, frame - y.shape[1] % frame)), 'constant', constant_values=0)
 
     for i in range(num_of_frame):
-        feature[:n_band, i] = librosa.power_to_db(np.sum(y[:, start:end], axis=1)+1)
+        feature_tmp[:n_band] = librosa.power_to_db(np.sum(y[:, start:end], axis=1) + 1)
         tmp_sum = np.reshape(np.sum(y[:, start:end], axis=0), (n_time, -1))
-        feature[n_band:, i] = librosa.power_to_db(np.sum(tmp_sum, axis=1)+1)
+        feature_tmp[n_band:] = librosa.power_to_db(np.sum(tmp_sum, axis=1) + 1)
         start += hop_length
         end += hop_length
+        feature.append(feature_tmp.reshape(1, -1))
 
+    feature = np.concatenate(feature, axis=0).transpose()
     return feature
 
 
