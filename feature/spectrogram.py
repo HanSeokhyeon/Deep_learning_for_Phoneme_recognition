@@ -96,7 +96,7 @@ def concatenate_feature(shared_data, filename):
                                 hop_length=the_hop_length,
                                 center=False)[:feature_frame//2].transpose()
     feature = feature.reshape(-1, 40, 5)
-    feature = np.sum(feature, axis=2).transpose()
+    feature = librosa.amplitude_to_db(np.sum(feature, axis=2).transpose(), ref=np.max)
 
     feature_delta = get_delta(feature, 2)
     feature_deltadelta = get_delta(feature_delta, 2)
