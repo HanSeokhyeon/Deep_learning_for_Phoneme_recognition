@@ -172,7 +172,8 @@ fabric.properties
 *.sqlite3
 
 # dataset
-dataset/*
+dataset/spikegram
+dataset/TIMIT
 
 # input
-input/*
+input/*.pickle
