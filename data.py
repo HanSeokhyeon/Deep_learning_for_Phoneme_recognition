@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
-import csv
+import gzip
+import pickle
 
 
 class Inputdata:
@@ -15,9 +16,12 @@ class Inputdata:
         self.num_of_test = np.shape(self.y_test)[0]
 
     def _get_train_test_data(self):
-        train_data = np.loadtxt(self.train_filename, dtype=np.float32, delimiter=',')
-        val_data = np.loadtxt(self.validation_filename, dtype=np.float32, delimiter=',')
-        test_data = np.loadtxt(self.test_filename, dtype=np.float32, delimiter=',')
+        with gzip.open(self.train_filename, 'rb') as f:
+            train_data = pickle.load(f)
+        with gzip.open(self.validation_filename, 'rb') as f:
+            val_data = pickle.load(f)
+        with gzip.open(self.test_filename, 'rb') as f:
+            test_data = pickle.load(f)
 
         self.x_train = train_data[:, 0:-1]
         self.y_train = train_data[:, [-1]]
