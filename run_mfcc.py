@@ -1,7 +1,7 @@
 from Model import *
 from Solver import *
 from data import *
-from feature_spikegram_multiprocessing import make_spikegram_feature
+from feature.mfcc_multiprocessing import make_mfcc_feature
 from logger import *
 
 import time
@@ -24,14 +24,14 @@ patience = 10
 
 
 def main():
-    if not os.path.isfile('feature/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[0])) or \
-        not os.path.isfile('feature/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[1])) or \
-        not os.path.isfile('feature/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[2])):
-        make_spikegram_feature()
+    if not os.path.isfile('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[0])) or \
+        not os.path.isfile('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[1])) or \
+        not os.path.isfile('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[2])):
+        make_mfcc_feature()
 
-    inputdata = Inputdata('feature/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[0]),
-                          'feature/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[1]),
-                          'feature/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[2]))
+    inputdata = Inputdata('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[0]),
+                          'input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[1]),
+                          'input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[2]))
 
     logger.info("data load complete")
 

@@ -9,18 +9,14 @@ import zipfile
 import io
 import shutil
 from logger import *
+from pathlib import Path
 
-spike_frame = 2048 * 6
-n_band = 32
-n_time = 10
-n_feature = 3 * (n_band+n_time) + 1
-n_structure = 4
 
 feature_frame = 400
 the_hop_length = 160
 
 
-def make_mfcc_feature():
+def make_spectrogram_feature():
     download_timit()
 
     start = time.time()
@@ -34,7 +30,7 @@ def make_mfcc_feature():
 
         shared_data = []
 
-        for j, filename in enumerate(input_filename[:]):
+        for j, filename in enumerate(input_filename[:100]):
             concatenate_feature(shared_data, filename)
             logger.info("{} {} complete".format(j, filename))
 
@@ -46,7 +42,8 @@ def make_mfcc_feature():
 
         data_norm = np.transpose(normalize_data(x=data, data_mean=data_mean, data_std=data_std))
 
-        with gzip.open("feature/120_mfcc_%s.pickle" % file_type[i], 'wb') as f:
+        parent = Path(__file__).parent.parent
+        with gzip.open("{}/input/120_spectrogram_{}.pickle".format(parent, file_type[i]), 'wb') as f:
             pickle.dump(data_norm, f, pickle.HIGHEST_PROTOCOL)
 
         logger.info("%s complete" % (file_type[i]))
@@ -94,12 +91,13 @@ def concatenate_feature(shared_data, filename):
 
     y = y[int(phn[0][0]):end_file]
 
-    feature = librosa.feature.mfcc(y,
-                                   sr=16000,
-                                   n_fft=feature_frame,
-                                   hop_length=the_hop_length,
-                                   n_mfcc=40,
-                                   center=False)
+    feature = librosa.core.stft(y,
+                                n_fft=feature_frame,
+                                hop_length=the_hop_length,
+                                center=False)[:feature_frame//2].transpose()
+    feature = feature.reshape(-1, 40, 5)
+    feature = np.sum(feature, axis=2).transpose()
+
     feature_delta = get_delta(feature, 2)
     feature_deltadelta = get_delta(feature_delta, 2)
 
@@ -182,4 +180,4 @@ def set_label_number(label):
 
 
 if __name__ == '__main__':
-    make_mfcc_feature()
+    make_spectrogram_feature()

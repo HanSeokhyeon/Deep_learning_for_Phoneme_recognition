@@ -1,15 +1,6 @@
 from multiprocessing import Process, Manager
-from feature_spikegram import *
+from feature.spikegram import *
 from logger import *
-
-spike_frame = 2048 * 6
-n_band = 32
-n_time = 10
-n_feature = 3 * (n_band+n_time) + 1
-n_structure = 4
-
-feature_frame = 400
-the_hop_length = 160
 
 
 def make_spikegram_feature():
@@ -32,11 +23,11 @@ def make_spikegram_feature():
                 p = Process(target=concatenate_feature, args=(shared_data, filename,))
                 processes.append(p)
                 p.start()
-                logger.info("{} {}\t-> feature".format(j, filename))
+                logger.info("{} {}\t-> input".format(j, filename))
 
             for j, p in enumerate(processes):
                 p.join()
-                logger.info(str(j) + " feature -> list")
+                logger.info(str(j) + " input -> list")
 
             shared_data = list(shared_data)
 
@@ -51,7 +42,8 @@ def make_spikegram_feature():
 
         data_norm = np.transpose(normalize_data(x=data, data_mean=data_mean, data_std=data_std))
 
-        with gzip.open("feature/126_PSNR50_%s.pickle" % file_type[i], 'wb') as f:
+        parent = Path(__file__).parent.parent
+        with gzip.open("{}/input/120_spectrogram_{}.pickle".format(parent, file_type[i]), 'wb') as f:
             pickle.dump(data_norm, f, pickle.HIGHEST_PROTOCOL)
 
         logger.info("%s complete" % (file_type[i]))

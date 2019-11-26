@@ -1,7 +1,7 @@
 from Model import *
 from Solver import *
 from data import *
-from feature.spikegram_multiprocessing import make_spikegram_feature
+from feature.spectrogram_multiprocessing import make_spectrogram_feature
 from logger import *
 
 import time
@@ -10,11 +10,11 @@ import os
 import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
-input_dim = 126
+input_dim = 120
 hidden_dims = [2000, 1000, 1000]
 output_dim = 39
 
-feature_name = 'PSNR50'
+feature_name = 'spectrogram'
 data_name = ['TRAIN', 'TEST_developmentset', 'TEST_coreset']
 
 epoch_n = 100
@@ -27,7 +27,7 @@ def main():
     if not os.path.isfile('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[0])) or \
         not os.path.isfile('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[1])) or \
         not os.path.isfile('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[2])):
-        make_spikegram_feature()
+        make_spectrogram_feature()
 
     inputdata = Inputdata('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[0]),
                           'input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[1]),
@@ -52,7 +52,7 @@ def main():
     init = tf.global_variables_initializer()
     sess.run(init)
 
-    print(input_dim, feature_name)
+    logger.info(input_dim, feature_name)
 
     min_loss = math.inf
     patience_count = 0

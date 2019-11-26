@@ -174,5 +174,5 @@ fabric.properties
 # dataset
 dataset/*
 
-# feature
-feature/*
+# input
+input/*
