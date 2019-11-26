@@ -21,7 +21,7 @@ def make_mfcc_feature():
     for i in range(3):
         input_filename = list(np.loadtxt("dataset/{}_list.csv".format(file_type[i]), delimiter=',', dtype=np.str))
 
-        print("Filename scan complete")
+        logger.info("Filename scan complete")
 
         with Manager() as manager:
             shared_data = manager.list()
@@ -31,16 +31,16 @@ def make_mfcc_feature():
                 p = Process(target=concatenate_feature, args=(shared_data, filename,))
                 processes.append(p)
                 p.start()
-                print("{} {}\t-> feature".format(j, filename))
+                logger.info("{} {}\t-> feature".format(j, filename))
 
             for j, p in enumerate(processes):
                 p.join()
-                print(str(j) + " feature -> list")
+                logger.info(str(j) + " feature -> list")
 
             shared_data = list(shared_data)
 
             end = time.time() - start
-            print("time = %.2f" % end)
+            logger.info("time = %.2f" % end)
 
             data = np.concatenate(shared_data, axis=1)
 
@@ -53,10 +53,10 @@ def make_mfcc_feature():
         with gzip.open("feature/120_mfcc_%s.pickle" % file_type[i], 'wb') as f:
             pickle.dump(data_norm, f, pickle.HIGHEST_PROTOCOL)
 
-        print("%s complete" % (file_type[i]))
+        logger.info("%s complete" % (file_type[i]))
 
     end = time.time() - start
-    print("time = %.2f" % end)
+    logger.info("time = %.2f" % end)
 
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@ import librosa
 import time
 import gzip
 import pickle
+from logger import *
 
 spike_frame = 2048 * 6
 n_band = 32
@@ -25,13 +26,13 @@ def make_spikegram_feature():
         dirname = "dataset/spikegram/%s/" % file_type[i]
         search(dirname, input_filename)
 
-        print("Filename scan complete")
+        logger.info("Filename scan complete")
 
         shared_data = []
 
         for j, filename in enumerate(input_filename[:]):
             concatenate_feature(shared_data, filename)
-            print("{} {} complete".format(j, filename))
+            logger.info("{} {} complete".format(j, filename))
 
         data = np.concatenate(shared_data, axis=1)
 
@@ -44,10 +45,10 @@ def make_spikegram_feature():
         with gzip.open("feature/126_PSNR50_%s.pickle" % file_type[i], 'wb') as f:
             pickle.dump(data_norm, f, pickle.HIGHEST_PROTOCOL)
 
-        print("%s complete" % (file_type[i]))
+        logger.info("%s complete" % (file_type[i]))
 
         end = time.time() - start
-        print("time = %.2f" % end)
+        logger.info("time = %.2f" % end)
 
 
 def search(dirname, input_filename):

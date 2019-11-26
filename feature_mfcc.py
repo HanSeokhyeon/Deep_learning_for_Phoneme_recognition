@@ -30,13 +30,13 @@ def make_mfcc_feature():
     for i in range(3):
         input_filename = list(np.loadtxt("dataset/{}_list.csv".format(file_type[i]), delimiter=',', dtype=np.str))
 
-        print("Filename scan complete")
+        logger.info("Filename scan complete")
 
         shared_data = []
 
         for j, filename in enumerate(input_filename[:]):
             concatenate_feature(shared_data, filename)
-            print("{} {} complete".format(j, filename))
+            logger.info("{} {} complete".format(j, filename))
 
         data = np.concatenate(shared_data, axis=1)
 
@@ -49,10 +49,10 @@ def make_mfcc_feature():
         with gzip.open("feature/120_mfcc_%s.pickle" % file_type[i], 'wb') as f:
             pickle.dump(data_norm, f, pickle.HIGHEST_PROTOCOL)
 
-        print("%s complete" % (file_type[i]))
+        logger.info("%s complete" % (file_type[i]))
 
         end = time.time() - start
-        print("time = %.2f" % end)
+        logger.info("time = %.2f" % end)
 
 
 def download_timit():

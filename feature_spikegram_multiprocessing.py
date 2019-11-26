@@ -1,5 +1,6 @@
 from multiprocessing import Process, Manager
 from feature_spikegram import *
+from logger import *
 
 spike_frame = 2048 * 6
 n_band = 32
@@ -21,7 +22,7 @@ def make_spikegram_feature():
         dirname = "dataset/spikegram/%s/" % file_type[i]
         search(dirname, input_filename)
 
-        print("Filename scan complete")
+        logger.info("Filename scan complete")
 
         with Manager() as manager:
             shared_data = manager.list()
@@ -31,16 +32,16 @@ def make_spikegram_feature():
                 p = Process(target=concatenate_feature, args=(shared_data, filename,))
                 processes.append(p)
                 p.start()
-                print("{} {}\t-> feature".format(j, filename))
+                logger.info("{} {}\t-> feature".format(j, filename))
 
             for j, p in enumerate(processes):
                 p.join()
-                print(str(j) + " feature -> list")
+                logger.info(str(j) + " feature -> list")
 
             shared_data = list(shared_data)
 
             end = time.time() - start
-            print("time = %.2f" % end)
+            logger.info("time = %.2f" % end)
 
             data = np.concatenate(shared_data, axis=1)
 
@@ -53,10 +54,10 @@ def make_spikegram_feature():
         with gzip.open("feature/126_PSNR50_%s.pickle" % file_type[i], 'wb') as f:
             pickle.dump(data_norm, f, pickle.HIGHEST_PROTOCOL)
 
-        print("%s complete" % (file_type[i]))
+        logger.info("%s complete" % (file_type[i]))
 
     end = time.time() - start
-    print("time = %.2f" % end)
+    logger.info("time = %.2f" % end)
 
 
 if __name__ == '__main__':

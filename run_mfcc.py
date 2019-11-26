@@ -2,6 +2,7 @@ from Model import *
 from Solver import *
 from data import *
 from feature_spikegram_multiprocessing import make_spikegram_feature
+from logger import *
 
 import time
 import math
@@ -32,6 +33,8 @@ def main():
                           'feature/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[1]),
                           'feature/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[2]))
 
+    logger.info("data load complete")
+
     tf.reset_default_graph()
     sess = tf.InteractiveSession()
 
@@ -49,7 +52,7 @@ def main():
     init = tf.global_variables_initializer()
     sess.run(init)
 
-    print(input_dim, feature_name)
+    logger.info(input_dim, feature_name)
 
     min_loss = math.inf
     patience_count = 0
@@ -69,12 +72,12 @@ def main():
 
         end = time.time() - start
 
-        print('Epoch', '%04d' % (epoch + 1),
-              '  Train loss =', '{:.9f}'.format(train_loss),
-              '  Val loss =', '{:.9f}'.format(n_loss),
-              '  Val accuracy = %.4f' % n_acc,
-              '  patience = %d' % patience_count,
-              '  time = %.1f' % end)
+        logger.info('Epoch', '%04d' % (epoch + 1),
+                    '  Train loss =', '{:.9f}'.format(train_loss),
+                    '  Val loss =', '{:.9f}'.format(n_loss),
+                    '  Val accuracy = %.4f' % n_acc,
+                    '  patience = %d' % patience_count,
+                    '  time = %.1f' % end)
 
         if n_loss < min_loss:
             min_loss = n_loss
@@ -83,16 +86,16 @@ def main():
         else:
             patience_count += 1
             if patience_count == patience:
-                print('Early Stopping!')
+                logger.info('Early Stopping!')
                 break
 
     nn.saver.restore(sess, tf.train.latest_checkpoint('model'))
     val_loss, val_acc = nn_solver.evaluate(inputdata.x_val, inputdata.y_val)
     test_loss, test_acc = nn_solver.evaluate(inputdata.x_test, inputdata.y_test)
-    print('Val loss =', '{:.9f}'.format(val_loss),
-          '  Val accuracy = %.4f' % val_acc,
-          '  Test loss =', '{:.9f}'.format(test_loss),
-          '  Test accuracy = %.4f' % test_acc)
+    logger.info('Val loss =', '{:.9f}'.format(val_loss),
+                '  Val accuracy = %.4f' % val_acc,
+                '  Test loss =', '{:.9f}'.format(test_loss),
+                '  Test accuracy = %.4f' % test_acc)
 
     y_ = np.argmax(nn_solver.predict(inputdata.x_test), axis=1)
     y_label = np.transpose(inputdata.y_test)[0]
