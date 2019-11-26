@@ -1,5 +1,5 @@
 from multiprocessing import Process, Manager
-from feature_spikegram import *
+from feature_mfcc import *
 
 spike_frame = 2048 * 6
 n_band = 32
@@ -11,15 +11,15 @@ feature_frame = 400
 the_hop_length = 160
 
 
-def make_spikegram_feature():
+def make_mfcc_feature():
+    download_timit()
+
     start = time.time()
 
     file_type = ['TRAIN', 'TEST_developmentset', 'TEST_coreset']
 
     for i in range(3):
-        input_filename = []
-        dirname = "dataset/spikegram/%s/" % file_type[i]
-        search(dirname, input_filename)
+        input_filename = list(np.loadtxt("dataset/{}_list.csv".format(file_type[i]), delimiter=',', dtype=np.str))
 
         print("Filename scan complete")
 
@@ -50,7 +50,7 @@ def make_spikegram_feature():
 
         data_norm = np.transpose(normalize_data(x=data, data_mean=data_mean, data_std=data_std))
 
-        with gzip.open("feature/126_PSNR50_%s.pickle" % file_type[i], 'wb') as f:
+        with gzip.open("feature/120_mfcc_%s.pickle" % file_type[i], 'wb') as f:
             pickle.dump(data_norm, f, pickle.HIGHEST_PROTOCOL)
 
         print("%s complete" % (file_type[i]))
@@ -60,4 +60,4 @@ def make_spikegram_feature():
 
 
 if __name__ == '__main__':
-    make_spikegram_feature()
+    make_mfcc_feature()
