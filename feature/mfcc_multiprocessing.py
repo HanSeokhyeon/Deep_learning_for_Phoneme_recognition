@@ -19,7 +19,7 @@ def make_mfcc_feature():
             processes = []
 
             for j, filename in enumerate(input_filename[:]):
-                p = Process(target=concatenate_feature, args=(shared_data, filename,))
+                p = Process(target=concatenate_feature, args=(shared_data, "dataset/TIMIT/{}".format(filename,)))
                 processes.append(p)
                 p.start()
                 logger.info("{} {}\t-> input".format(j, filename))
@@ -42,7 +42,7 @@ def make_mfcc_feature():
         data_norm = np.transpose(normalize_data(x=data, data_mean=data_mean, data_std=data_std))
 
         parent = Path(__file__).parent.parent
-        with gzip.open("{}/input/120_spectrogram_{}.pickle".format(parent, file_type[i]), 'wb') as f:
+        with gzip.open("{}/input/120_mfcc_{}.pickle".format(parent, file_type[i]), 'wb') as f:
             pickle.dump(data_norm, f, pickle.HIGHEST_PROTOCOL)
 
         logger.info("%s complete" % (file_type[i]))

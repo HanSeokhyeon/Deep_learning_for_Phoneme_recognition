@@ -172,8 +172,15 @@ fabric.properties
 *.sqlite3
 
 # dataset
-dataset/spikegram
 dataset/TIMIT
+dataset/spikegram
+
+# model
+model/checkpoint
+model/dnn.ckpt.data-00000-of-00001
+model/dnn.ckpt.index
+mddel/dnn.ckpt.meta
 
 # input
 input/*.pickle
+

@@ -33,9 +33,10 @@ class Inputdata:
         self.y_test = test_data[:, [-1]]
 
     def get_minibatch(self, mini_batch_size):
-        data_set = tf.data.Dataset.from_tensor_slices((self.x_train, self.y_train))
+        self.data_x, self.data_y = tf.placeholder(tf.float32), tf.placeholder(tf.float32)
+        data_set = tf.data.Dataset.from_tensor_slices((self.data_x, self.data_y))
         data_set = data_set.shuffle(np.shape(self.x_train)[0]).repeat().batch(mini_batch_size)
-        iterator = data_set.make_one_shot_iterator()
-        x, y = iterator.get_next()
+        self.itr = data_set.make_initializable_iterator()
+        x, y = self.itr.get_next()
 
         return x, y

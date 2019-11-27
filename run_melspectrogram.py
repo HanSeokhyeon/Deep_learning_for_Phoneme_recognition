@@ -1,7 +1,7 @@
 from model.Model import *
 from model.Solver import *
 from data import *
-from feature.spikegram_multiprocessing import make_spikegram_feature
+from feature.melspectrogram_multiprocessing import make_melspectrogram_feature
 from logger import *
 from result import *
 
@@ -11,11 +11,11 @@ import os
 import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
-input_dim = 126
+input_dim = 120
 hidden_dims = [2000, 1000, 1000]
 output_dim = 39
 
-feature_name = 'spikegram'
+feature_name = 'melspectrogram'
 data_name = ['TRAIN', 'TEST_developmentset', 'TEST_coreset']
 
 epoch_n = 100
@@ -28,7 +28,7 @@ def main():
     if not os.path.isfile('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[0])) or \
         not os.path.isfile('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[1])) or \
         not os.path.isfile('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[2])):
-        make_spikegram_feature()
+        make_melspectrogram_feature()
 
     inputdata = Inputdata('input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[0]),
                           'input/%d_%s_%s.pickle' % (input_dim, feature_name, data_name[1]),
@@ -41,8 +41,7 @@ def main():
 
     x, y = inputdata.get_minibatch(batch_size)
 
-    sess.run(inputdata.itr.initializer,
-             feed_dict={inputdata.data_x: inputdata.x_train, inputdata.data_y: inputdata.y_train})
+    sess.run(inputdata.itr.initializer, feed_dict={inputdata.data_x:inputdata.x_train, inputdata.data_y:inputdata.y_train})
 
     nn = Model('nn',
                input_dim=input_dim,

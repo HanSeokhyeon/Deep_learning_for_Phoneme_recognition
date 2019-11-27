@@ -1,11 +1,10 @@
-import os
-import numpy as np
 import librosa
 import time
 import gzip
 import pickle
 from logger import *
 from pathlib import Path
+from util import *
 
 spike_frame = 2048 * 6
 n_band = 32
@@ -22,16 +21,14 @@ def make_spikegram_feature():
     file_type = ['TRAIN', 'TEST_developmentset', 'TEST_coreset']
 
     for i in range(3):
-        input_filename = []
-        dirname = "dataset/spikegram/%s/" % file_type[i]
-        search(dirname, input_filename)
+        input_filename = list(np.loadtxt("dataset/{}_list.csv".format(file_type[i]), delimiter=',', dtype=np.str))
 
         logger.info("Filename scan complete")
 
         shared_data = []
 
         for j, filename in enumerate(input_filename[:]):
-            concatenate_feature(shared_data, filename)
+            concatenate_feature(shared_data, "dataset/spikegram/{}".format(filename))
             logger.info("{} {} complete".format(j, filename))
 
         data = np.concatenate(shared_data, axis=1)
@@ -43,29 +40,13 @@ def make_spikegram_feature():
         data_norm = np.transpose(normalize_data(x=data, data_mean=data_mean, data_std=data_std))
 
         parent = Path(__file__).parent.parent
-        with gzip.open("{}/input/120_spectrogram_{}.pickle".format(parent, file_type[i]), 'wb') as f:
+        with gzip.open("{}/input/126_spikegram_{}.pickle".format(parent, file_type[i]), 'wb') as f:
             pickle.dump(data_norm, f, pickle.HIGHEST_PROTOCOL)
 
         logger.info("%s complete" % (file_type[i]))
 
         end = time.time() - start
         logger.info("time = %.2f" % end)
-
-
-def search(dirname, input_filename):
-    try:
-        filenames = os.listdir(dirname)
-        for filename in filenames:
-            full_filename = os.path.join(dirname, filename)
-            if os.path.isdir(full_filename):
-                search(full_filename, input_filename)
-            else:
-                ext = os.path.splitext(full_filename)[-1]
-                if ext == '.PHN':
-                    input_filename.append(full_filename[:-4])
-                    # print(full_filename)
-    except PermissionError:
-        pass
 
 
 def concatenate_feature(shared_data, filename):
@@ -97,8 +78,8 @@ def concatenate_feature(shared_data, filename):
 
 def get_data(filename):
     phn_filename = filename + ".PHN"
-    raw_filename = filename + "_spike_PSNR50.raw"
-    num_filename = filename + "_num_PSNR50.raw"
+    raw_filename = filename + "_spike.raw"
+    num_filename = filename + "_num.raw"
 
     phn = np.loadtxt(phn_filename, dtype=np.unicode)
     x = np.fromfile(raw_filename, dtype=np.float64)
@@ -130,7 +111,7 @@ max_point = get_delay()
 
 
 def get_spikegram(x, num, acc_num, n_data):
-    # get spikegram by SNR
+    # get spikegram_old by SNR
     spikegram = np.zeros((n_band, spike_frame * n_data))
     for k in range(n_data):
         for n in range(num[k]):
@@ -162,63 +143,6 @@ def make_feature(y, frame, hop_length):
 
     feature = np.concatenate(feature, axis=0).transpose()
     return feature
-
-
-def get_delta(x, N):
-    pad_x = np.pad(x, ((0, 0), (N, N)), 'edge')
-    delta = np.zeros(np.shape(x))
-    iterator = [i + 1 for i in range(N)]
-    for t in range(np.shape(x)[1]):
-        tmp1, tmp2 = 0, 0
-        for n in iterator:
-            tmp1 += n * (pad_x[:, (t + N) + n] - pad_x[:, (t + N) - n])
-            tmp2 += 2 * n * n
-        delta[:, t] = np.divide(tmp1, tmp2)
-
-    return delta
-
-
-def normalize_data(x, data_mean, data_std):
-    data = x
-    data_std[data_std==0] = 0.00001
-    data[:-1] -= data_mean[:-1, None]
-    data[:-1] /= data_std[:-1, None]
-    return data
-
-
-def phn_label(phn, frame, hop_length, num_of_frame):
-    label = np.empty(num_of_frame, dtype='U5')
-    label_number = 0
-    idx = int(phn[0][0])
-    for i in range(num_of_frame):
-        if int(phn[label_number][0]) <= idx < int(phn[label_number][1]):
-            label[i] = phn[label_number][2]
-        else:
-            if idx - int(phn[label_number][1]) <= frame / 2:
-                label[i] = phn[label_number][2]
-                label_number += 1
-            else:
-                label_number += 1
-                label[i] = phn[label_number][2]
-
-        idx += hop_length
-    return label
-
-
-def set_label_number(label):
-    phone_39set = {"iy": 0, "ih": 1, "ix": 1, "eh": 2, "ae": 3, "ah": 4, "ax": 4, "ax-h": 4, "uw": 5, "ux": 5, "uh": 6,
-                   "aa": 7, "ao": 7, "ey": 8, "ay": 9, "oy": 10, "aw": 11, "ow": 12, "er": 13, "axr": 13,
-                   "l": 14, "el": 14, "r": 15, "w": 16, "y": 17, "m": 18, "em": 18, "n": 19, "en": 19, "nx": 19,
-                   "ng": 20, "eng": 20, "dx": 21, "jh": 22, "ch": 23, "z": 24, "s": 25, "sh": 26, "zh": 26,
-                   "hh": 27, "hv": 27, "v": 28, "f": 29, "dh": 30, "th": 31, "b": 32, "p": 33, "d": 34, "t": 35,
-                   "g": 36, "k": 37, "bcl": 38, "pcl": 38, "dcl": 38, "tcl": 38, "gcl": 38, "kcl": 38, "epi": 38,
-                   "pau": 38, "h": 38, "q": 38}
-
-    label_idx = np.zeros(len(label))
-    for i in range(len(label)):
-        label_idx[i] = phone_39set[label[i]]
-
-    return label_idx
 
 
 if __name__ == '__main__':

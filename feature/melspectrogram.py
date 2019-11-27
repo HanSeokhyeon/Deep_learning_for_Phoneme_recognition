@@ -5,12 +5,11 @@ import pickle
 from pathlib import Path
 from util import *
 
-
 feature_frame = 400
 the_hop_length = 160
 
 
-def make_spectrogram_feature():
+def make_melspectrogram_feature():
     download_timit()
 
     start = time.time()
@@ -37,7 +36,7 @@ def make_spectrogram_feature():
         data_norm = np.transpose(normalize_data(x=data, data_mean=data_mean, data_std=data_std))
 
         parent = Path(__file__).parent.parent
-        with gzip.open("{}/input/120_spectrogram_{}.pickle".format(parent, file_type[i]), 'wb') as f:
+        with gzip.open("{}/input/120_melspectrogram_{}.pickle".format(parent, file_type[i]), 'wb') as f:
             pickle.dump(data_norm, f, pickle.HIGHEST_PROTOCOL)
 
         logger.info("%s complete" % (file_type[i]))
@@ -57,13 +56,12 @@ def concatenate_feature(shared_data, filename):
 
     y = y[int(phn[0][0]):end_file]
 
-    feature = np.abs(librosa.core.stft(y,
-                                n_fft=feature_frame,
-                                hop_length=the_hop_length,
-                                center=False)[:feature_frame//2].transpose())
-    feature = feature.reshape(-1, 40, 5)
-    feature = librosa.amplitude_to_db(np.sum(feature, axis=2).transpose(), ref=np.max)
-
+    feature = librosa.feature.melspectrogram(y,
+                                             sr=16000,
+                                             n_fft=feature_frame,
+                                             hop_length=the_hop_length,
+                                             n_mels=40,
+                                             center=False)
     feature_delta = get_delta(feature, 2)
     feature_deltadelta = get_delta(feature_delta, 2)
 
@@ -78,4 +76,4 @@ def concatenate_feature(shared_data, filename):
 
 
 if __name__ == '__main__':
-    make_spectrogram_feature()
+    make_melspectrogram_feature()

@@ -1,9 +1,10 @@
 from multiprocessing import Process, Manager
-from feature.spikegram import *
-from logger import *
+from feature.mfcc import *
 
 
-def make_spikegram_feature():
+def make_melspectrogram_feature():
+    download_timit()
+
     start = time.time()
 
     file_type = ['TRAIN', 'TEST_developmentset', 'TEST_coreset']
@@ -18,7 +19,7 @@ def make_spikegram_feature():
             processes = []
 
             for j, filename in enumerate(input_filename[:]):
-                p = Process(target=concatenate_feature, args=(shared_data, "dataset/spikegram/{}".format(filename)))
+                p = Process(target=concatenate_feature, args=(shared_data, "dataset/TIMIT/{}".format(filename,)))
                 processes.append(p)
                 p.start()
                 logger.info("{} {}\t-> input".format(j, filename))
@@ -41,7 +42,7 @@ def make_spikegram_feature():
         data_norm = np.transpose(normalize_data(x=data, data_mean=data_mean, data_std=data_std))
 
         parent = Path(__file__).parent.parent
-        with gzip.open("{}/input/126_spikegram_{}.pickle".format(parent, file_type[i]), 'wb') as f:
+        with gzip.open("{}/input/120_melspectrogram_{}.pickle".format(parent, file_type[i]), 'wb') as f:
             pickle.dump(data_norm, f, pickle.HIGHEST_PROTOCOL)
 
         logger.info("%s complete" % (file_type[i]))
@@ -51,4 +52,4 @@ def make_spikegram_feature():
 
 
 if __name__ == '__main__':
-    make_spikegram_feature()
+    make_melspectrogram_feature()

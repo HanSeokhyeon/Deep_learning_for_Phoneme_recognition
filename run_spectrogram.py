@@ -1,8 +1,9 @@
-from Model import *
-from Solver import *
+from model.Model import *
+from model.Solver import *
 from data import *
 from feature.spectrogram_multiprocessing import make_spectrogram_feature
 from logger import *
+from result import *
 
 import time
 import math
@@ -40,6 +41,9 @@ def main():
 
     x, y = inputdata.get_minibatch(batch_size)
 
+    sess.run(inputdata.itr.initializer,
+             feed_dict={inputdata.data_x: inputdata.x_train, inputdata.data_y: inputdata.y_train})
+
     nn = Model('nn',
                input_dim=input_dim,
                output_dim=output_dim,
@@ -52,10 +56,12 @@ def main():
     init = tf.global_variables_initializer()
     sess.run(init)
 
-    logger.info(input_dim, feature_name)
+    logger.info("{} {}".format(input_dim, feature_name))
 
     min_loss = math.inf
     patience_count = 0
+
+    loss_tr, loss_val, acc_val = [], [], []
 
     for epoch in range(epoch_n):
         start = time.time()
@@ -68,16 +74,16 @@ def main():
             train_loss += nn_loss
 
         train_loss /= inputdata.num_of_train//batch_size
+        loss_tr.append(train_loss)
+
         n_loss, n_acc = nn_solver.evaluate(inputdata.x_val, inputdata.y_val)
+        loss_val.append(n_loss)
+        acc_val.append(n_acc)
 
         end = time.time() - start
 
-        logger.info('Epoch', '%04d' % (epoch + 1),
-                    '  Train loss =', '{:.9f}'.format(train_loss),
-                    '  Val loss =', '{:.9f}'.format(n_loss),
-                    '  Val accuracy = %.4f' % n_acc,
-                    '  patience = %d' % patience_count,
-                    '  time = %.1f' % end)
+        logger.info("Epoch {} Train loss = {:.9f} Val loss = {:.9f} Val acc = {:.4f} patience = {} time = {:.4f}" \
+                    .format((epoch + 1), train_loss, n_loss, n_acc, patience_count, end))
 
         if n_loss < min_loss:
             min_loss = n_loss
@@ -92,16 +98,19 @@ def main():
     nn.saver.restore(sess, tf.train.latest_checkpoint('model'))
     val_loss, val_acc = nn_solver.evaluate(inputdata.x_val, inputdata.y_val)
     test_loss, test_acc = nn_solver.evaluate(inputdata.x_test, inputdata.y_test)
-    logger.info('Val loss =', '{:.9f}'.format(val_loss),
-                '  Val accuracy = %.4f' % val_acc,
-                '  Test loss =', '{:.9f}'.format(test_loss),
-                '  Test accuracy = %.4f' % test_acc)
+
+    logger.info("Val loss ={:.9f} Val acc ={:.4f} Test loss ={:.9f} Test acc ={:.4f}" \
+                .format(val_loss, val_acc, test_loss, test_acc))
 
     y_ = np.argmax(nn_solver.predict(inputdata.x_test), axis=1)
     y_label = np.transpose(inputdata.y_test)[0]
     cm = tf.confusion_matrix(labels=y_label, predictions=y_, num_classes=output_dim)
     now_cm = cm.eval()
     np.savetxt('output/%d_%s_CM.csv' % (input_dim, feature_name), now_cm, delimiter=',')
+
+    plot(loss_tr=loss_tr, loss_val=loss_val, acc_val=acc_val, acc_test=test_acc,
+         filename="output/{}_{}.png".format(input_dim, feature_name))
+    phonetic_accuracy(now_cm)
 
     return 0
 

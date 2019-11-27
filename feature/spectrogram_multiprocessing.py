@@ -19,7 +19,7 @@ def make_spectrogram_feature():
             processes = []
 
             for j, filename in enumerate(input_filename[:]):
-                p = Process(target=concatenate_feature, args=(shared_data, filename,))
+                p = Process(target=concatenate_feature, args=(shared_data, "dataset/TIMIT/{}".format(filename)))
                 processes.append(p)
                 p.start()
                 logger.info("{} {}\t-> input".format(j, filename))
