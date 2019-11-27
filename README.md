@@ -5,6 +5,7 @@ Simple implementation of DNN for phoneme recognition
 ## Dataset
 
 * [TIMIT](https://catalog.ldc.upenn.edu/LDC93S1)
+* TIMIT(Spikegram)
 
 ## Requirement
 
@@ -20,6 +21,7 @@ Simple implementation of DNN for phoneme recognition
 ```
 python3 run_spikegram.py
 ```
+But you don't have TIMIT(spikegram).
 #### 2. MFCC
 ```
 python3 run_mfcc.py
